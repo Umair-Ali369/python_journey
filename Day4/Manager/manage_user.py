@@ -18,8 +18,7 @@ class UserManager():
                 print(f'Founded , {user}')
             
     def total_users(self):
-        total = len(self.all_Users)
-        print(f'Total Users : {total}')
+        return len(self.all_Users)
 
     def save_to_file(self):
         dict_list = [user.to_dict() for user in self.all_Users]

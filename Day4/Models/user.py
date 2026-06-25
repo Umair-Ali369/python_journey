@@ -46,7 +46,7 @@ class User:
         from Services.translator import translate_text
         translated = translate_text(message, self.language, from_language)
         print(f"{self.name} : recieved:{translated}")
-      
+        return translated
     def to_dict(self): 
         return { 
             "id" : self.id, 

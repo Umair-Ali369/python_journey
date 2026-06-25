@@ -1,0 +1,80 @@
+[
+    {
+        "id": 1,
+        "participants": [
+            {
+                "id": 1,
+                "Name": "Ahmad",
+                "Age": 22,
+                "Language": "ur",
+                "is_premium": false,
+                "Messages": 0
+            },
+            {
+                "id": 2,
+                "Name": "Yuki",
+                "Age": 25,
+                "Language": "ja",
+                "is_premium": false,
+                "Messages": 0
+            }
+        ],
+        "messages": [
+            {
+                "sender_id": 1,
+                "text": "How are baby? I love girl who love me a lot.",
+                "translated_text": "赤ちゃんはどうですか？私は私をたくさん愛してくれる女の子が大好きです。",
+                "timeStamp": "24/06/2026"
+            },
+            {
+                "sender_id": 2,
+                "text": "Are you alight? Where do you live nowadays.",
+                "translated_text": "کیا آپ اتر رہے ہیں؟ آپ آج کل کہاں رہتے ہیں۔",
+                "timeStamp": "24/06/2026"
+            },
+            {
+                "sender_id": 1,
+                "text": "I am okay, alright, fine. I live in London nowadsys.",
+                "translated_text": "私は大丈夫、大丈夫、大丈夫。私はロンドンのノワドシスに住んでいます。",
+                "timeStamp": "24/06/2026"
+            }
+        ],
+        "created_at": "24/06/2026"
+    },
+    {
+        "id": 2,
+        "participants": [
+            {
+                "id": 2,
+                "Name": "Yuki",
+                "Age": 25,
+                "Language": "ja",
+                "is_premium": false,
+                "Messages": 0
+            },
+            {
+                "id": 3,
+                "Name": "Omar",
+                "Age": 30,
+                "Language": "ar",
+                "is_premium": false,
+                "Messages": 0
+            }
+        ],
+        "messages": [
+            {
+                "sender_id": 2,
+                "text": "Hi, how are you buddy, where are you hidden in this beautiful earth.",
+                "translated_text": "مرحباً، كيف حالك يا صديقي، أين أنت مختبئاً في هذه الأرض الجميلة.",
+                "timeStamp": "24/06/2026"
+            },
+            {
+                "sender_id": 3,
+                "text": "Yeah, thanks, bro I have a lot works and I'm busy in it all day.",
+                "translated_text": "はい、ありがとう、兄さん、仕事がたくさんあって一日中忙しいんです。",
+                "timeStamp": "24/06/2026"
+            }
+        ],
+        "created_at": "24/06/2026"
+    }
+]
