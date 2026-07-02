@@ -85,16 +85,141 @@
 # run_system()
 
 
-from fastapi import FastAPI, HTTPException 
+# from fastapi import FastAPI, HTTPException 
+# from pydantic import BaseModel
+# from Models.user import User, PremiumUser
+# from Manager.manage_user import UserManager
+# from Data.chatManager import ChatManager
+
+# app = FastAPI(title = "WELLCOME TO GLOBAL SYSTEM")
+
+# user_manager = UserManager()
+# chat_manager = ChatManager()
+
+# ## PYNDATIC MODELS
+# class UserCreate(BaseModel):
+#     name : str
+#     language : str
+#     age : int
+#     is_premium : bool = False
+
+# class ConversationCreate(BaseModel):
+#     user1_id : int
+#     user2_id : int
+
+# class MessageCreate(BaseModel):
+#     conversation_id : int
+#     sender_id : int
+#     text : str
+
+
+# ## ROUTES
+
+# ### home (get)
+# @app.get("/")
+# def home():
+#     return {
+#         "message" : "WELLCOME TO GLOBAL SYSTEM APIs",
+#         "status" : "running",
+#         "total_users" : len(user_manager.all_Users)
+#     }
+
+# ### get all users (get)
+# @app.get("/users")
+# def getUsers():
+#     return {
+#         "Users" : [U.to_dict() for U in user_manager.all_Users]
+#     }
+
+# ### create user (post)
+# @app.post("/users")
+# def create_user(data : UserCreate):
+#     if data.is_premium:
+#         new_user = PremiumUser(data.name, data.language, data.age)
+#     else:
+#         new_user = User(data.name, data.language, data.age)
+
+#     user_manager.add_user(new_user)
+#     return {
+#         "message" : f"Wellcome to Global System : {new_user.name}",
+#         "User" : new_user.to_dict()
+#     }
+
+
+# ### get single user (get)
+# @app.get("/users/{user_id}")
+# def get_user(user_id : int):
+#     for user in user_manager.all_Users:
+#         if user.id == user_id:
+#             return user.to_dict()
+
+#     raise HTTPException(status = 404, details = "User Not found!")
+
+
+# ### create conversation (post)
+# @app.post("/conversations")
+# def create_conversation(data : ConversationCreate):
+#     user1 = None
+#     for user in user_manager.all_Users:
+#         if user.id == data.user1_id:
+#             user1 = user
+#             break
+
+#     user2 = None
+#     for user in user_manager.all_Users:
+#         if user.id == data.user2_id:
+#             user2 = user
+#             break
+
+#     if not user1 or not user2:
+#         raise HTTPException(status = 404, detail = "One or both Users not found!")
+
+#     conv = chat_manager.create_conversation(user1, user2)
+#     return {
+#         "message " : "Converation Started",
+#         "Conversation_id" : conv["id"],
+#         "Between" : [user1.name, user2.name]
+#     }
+    
+# ### send message
+# @app.post("/messages")
+# def send_message(data : MessageCreate):
+#     success = chat_manager.add_message(
+#         conversation_id = data.conversation_id,
+#         sender_id= data.sender_id,
+#         text = data.text
+#     )
+#     if not success:
+#         raise HTTPException(status = 404, detail= "Conversation not Found!")
+
+#     return {
+#         "message" : "Message send and translated."
+#     }
+
+# ### get conversation messages
+# @app.get("/conversations/{conv_id}/messages")
+# def get_messages(conv_id : int):
+#     messages = chat_manager.get_messages(conv_id)
+#     if not messages:
+#         raise HTTPException(status = 404, detail = "Conversation Not found")
+#     return {
+#         "Messages" : messages
+#     }
+
+
+from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
-from Models.user import User, PremiumUser
-from Manager.manage_user import UserManager
-from Data.chatManager import ChatManager
+from sqlalchemy.orm import Session
+from database import get_db, engine
+from Models.db_models import UserDB, ConversationDB, MessagesDB
+from Services.translator import translate_text
+from datetime import datetime
+import Models.db_models as models
+from database import Base
 
-app = FastAPI(title = "WELLCOME TO GLOBAL SYSTEM")
+Base.metadata.create_all(bind=engine)
 
-user_manager = UserManager()
-chat_manager = ChatManager()
+app = FastAPI(title = "Global System APIs", version= "2.0.0")
 
 ## PYNDATIC MODELS
 class UserCreate(BaseModel):
@@ -112,96 +237,121 @@ class MessageCreate(BaseModel):
     sender_id : int
     text : str
 
-
 ## ROUTES
 
-### home (get)
 @app.get("/")
-def home():
+def home(db : Session = Depends(get_db)):
+    total = db.query(UserDB).count()
+    convTotal = db.query(ConversationDB).count()
     return {
-        "message" : "WELLCOME TO GLOBAL SYSTEM APIs",
-        "status" : "running",
-        "total_users" : len(user_manager.all_Users)
+        "Message" : "Wellcome to Global System",
+        "Version" : "2.0.0",
+        "Total Users" : total,
+        "Total Conversations" : convTotal
     }
-
-### get all users (get)
+## USER ROUTES
 @app.get("/users")
-def getUsers():
+def get_users(db : Session = Depends(get_db)):
+    users = db.query(UserDB).all()
     return {
-        "Users" : [U.to_dict() for U in user_manager.all_Users]
+        "Users" : [{"id" : u.id, "name" : u.name, "age" : u.age, "language" : u.language} for u in users]
     }
 
-### create user (post)
 @app.post("/users")
-def create_user(data : UserCreate):
-    if data.is_premium:
-        new_user = PremiumUser(data.name, data.language, data.age)
-    else:
-        new_user = User(data.name, data.language, data.age)
-
-    user_manager.add_user(new_user)
-    return {
-        "message" : f"Wellcome to Global System : {new_user.name}",
-        "User" : new_user.to_dict()
-    }
-
-
-### get single user (get)
-@app.get("/users/{user_id}")
-def get_user(user_id : int):
-    for user in user_manager.all_Users:
-        if user.id == user_id:
-            return user.to_dict()
-
-    raise HTTPException(status = 404, details = "User Not found!")
-
-
-### create conversation (post)
-@app.post("/conversations")
-def create_conversation(data : ConversationCreate):
-    user1 = None
-    for user in user_manager.all_Users:
-        if user.id == data.user1_id:
-            user1 = user
-            break
-
-    user2 = None
-    for user in user_manager.all_Users:
-        if user.id == data.user2_id:
-            user2 = user
-            break
-
-    if not user1 or not user2:
-        raise HTTPException(status = 404, detail = "One or both Users not found!")
-
-    conv = chat_manager.create_conversation(user1, user2)
-    return {
-        "message " : "Converation Started",
-        "Conversation_id" : conv["id"],
-        "Between" : [user1.name, user2.name]
-    }
-    
-### send message
-@app.post("/messages")
-def send_message(data : MessageCreate):
-    success = chat_manager.add_message(
-        conversation_id = data.conversation_id,
-        sender_id= data.sender_id,
-        text = data.text
+def create_user(data : UserCreate, db : Session = Depends(get_db)):
+    new_user = UserDB(
+        name = data.name,
+        language = data.language,
+        age = data.age
     )
-    if not success:
-        raise HTTPException(status = 404, detail= "Conversation not Found!")
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
 
     return {
-        "message" : "Message send and translated."
+        "Message" : f'Wellcome to Global System, {new_user.name}!',
+        "User" : {
+          "id" : int(new_user.id),
+            "name" : str(new_user.name),
+            "language" : str(new_user.language),
+            "age" : int(new_user.age),
+            "is_premium" : bool(new_user.is_premium)
+        }
     }
 
-### get conversation messages
-@app.get("/conversations/{conv_id}/messages")
-def get_messages(conv_id : int):
-    messages = chat_manager.get_messages(conv_id)
-    if not messages:
-        raise HTTPException(status = 404, detail = "Conversation Not found")
+@app.get("/users/{user_id}")
+def get_user(user_id : int, db : Session = Depends(get_db)):
+    Users  = db.query(UserDB).all()
+    for u in Users:
+        if user_id == u.id:
+            return u.to_dict()
+    raise HTTPException(status = "404", Detail = "User NOt Found!")
+
+## CONVERSATION ROUTES
+
+@app.post("/conversations")
+def create_conversation(data : ConversationCreate, db : Session = Depends(get_db)):
+    user1 = db.query(UserDB).filter(UserDB.id == data.user1_id).first()
+    user2 = db.query(UserDB).filter(UserDB.id == data.user2_id).first()
+    if not user1 or not user2:
+        raise HTTPException(status_code=404, detail="One or both users not found!")
+
+    new_conversation = ConversationDB(
+        user1_id = data.user1_id,
+        user2_id = data.user2_id
+             )
+
+    db.add(new_conversation)
+    db.commit()
+    db.refresh(new_conversation)
+
     return {
-        "Messages" : messages
+        "Message" : "Conversation created",
     }
+
+@app.get("/conversations/{conv_id}")
+def get_conversation(conv_id : int, db : Session = Depends(get_db)):
+    conversation = db.query(ConversationDB).filter(ConversationDB.id == conv_id).first()
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    return {
+    "id": conversation.id,
+    "user1_id": conversation.user1_id,
+    "user2_id": conversation.user2_id,
+    "created_at": conversation.created_at
+}
+
+
+## MESSAGE RUOTES
+@app.post("/messages")
+def send_message(data : MessageCreate, db : Session = Depends(get_db)):
+
+    conv = db.query(ConversationDB).filter(ConversationDB.id == data.conversation_id).first()
+    if not conv:
+        raise HTTPException(status = "404", detail = "Conversation Not found!")
+
+    recipient_id = conv.user2_id if conv.user1_id == data.sender_id else conv.user1_id
+    recipient = db.query(UserDB).filter(UserDB.id == recipient_id).first()
+
+   
+    translated_Text = translate_text(data.text, recipient.language)
+
+    new_message = MessagesDB(
+        conversation_id = data.conversation_id,
+        sender_id = data.sender_id,
+        original_text = data.text,
+        translated_text = translated_Text
+    )
+
+    db.add(new_message)
+    db.commit()
+    db.refresh(new_message)
+
+    return {
+        "Message" : "Send!",
+        "original" : data.text,
+        "translated" : translated_Text,
+        "Recipient_Language" : recipient.language
+    } 
