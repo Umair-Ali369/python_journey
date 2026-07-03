@@ -1,6 +1,7 @@
 from sqlalchemy import Column, String, Integer, ForeignKey, Boolean, DateTime
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from datetime import datetime
+from sqlalchemy.sql import func
 from database import Base
 
 class UserDB(Base):
@@ -8,6 +9,8 @@ class UserDB(Base):
 
     id            = Column(Integer, primary_key=True, index=True)
     name          = Column(String, nullable=False)
+    email         = Column(String, unique=True, nullable=False)
+    password_hash = Column(String, nullable=False)
     language      = Column(String, nullable=False)
     age           = Column(Integer)
     is_premium    = Column(Boolean, default=False)
@@ -40,7 +43,7 @@ class MessagesDB(Base):
     sender_id       = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
     original_text   = Column(String)
     translated_text: Mapped[str] = mapped_column(nullable=True)
-    timestamp       = Column(DateTime, default=datetime.now)  # ← fixed: timeStamp → timestamp
+    timestamp       = Column(DateTime, default=datetime.now())  
 
     sender       = relationship(
         "UserDB",
