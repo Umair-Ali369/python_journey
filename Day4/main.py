@@ -1,3 +1,7 @@
+from dotenv import load_dotenv
+import os
+
+from sqlalchemy.sql.functions import current_user
 from auth_user import hashPassword, verifyPassword, create_token, getCurrentUser
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.security import OAuth2PasswordRequestForm
@@ -9,7 +13,9 @@ from Services.translator import translate_text
 from datetime import datetime
 import Models.db_models as models
 from database import Base
+from Services.ai_service import get_business_help, get_study_help, chatWithAI
 
+load_dotenv()
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title = "Global System APIs", version= "2.0.0")
@@ -31,9 +37,93 @@ class MessageCreate(BaseModel):
     conversation_id : int
     sender_id : int
     text : str
+### MODELS FOR AI
+class AIChatRequest(BaseModel):
+    message : str
+    language : str = "en"
+
+class StudyRequest(BaseModel):
+    topic : str
+    language : str = "en"
+
+class BusinessRequest(BaseModel):
+    task : str
+    language : str = "en"
 
 ## ROUTES
 
+### AI ROUTES 
+
+@app.post("/ai/chat")
+def ai_chat(
+    data : AIChatRequest,
+    currentUser : UserDB = Depends(getCurrentUser),
+    db : Session = Depends(get_db)
+):
+    result = chatWithAI(
+        message = data.message,
+        user_language = currentUser.language
+    )
+
+    if not result["success"]:
+        raise HTTPException(status_code = 500, detial = result["Error"])
+    
+    return {
+        "user" : currentUser.name,
+        "message_send" : data.message,
+        "ai_response" :  result["translated_response"],
+        "ai_response_eng" : result["original_response"],
+        "language" : currentUser.language,
+        "model" : result["model"]
+    } 
+
+@app.post("/ai/learn")
+def ai_learn( data : StudyRequest, currentUser : UserDB = Depends(getCurrentUser)):
+    result = get_study_help(
+        topic = data.topic,
+        user_language = currentUser.language
+    )
+
+    if not result["success"]:
+        raise HTTPException(status_code = 500, detial = result["Error"])
+
+    return {
+        "topic" : data.topic,
+        "explanation" : result["translated_response"],
+        "explanation_eng" : result["original_response"],
+        "language" : currentUser.language
+    }
+
+@app.post("/ai/business")
+def ai_business(data : BusinessRequest, currentUser : UserDB = Depends(getCurrentUser)):
+    result = get_business_help(
+        task = data.task,
+        user_language = currentUser.language
+    )
+
+    if not result["success"]:
+        raise HTTPException(status_code = 500, detial = result["Error"])
+
+    return  {
+        "task" : data.task,
+        "assistance" : result["translated_response"],
+        "assistance_eng" : result["original_response"],
+        "language" : currentUser.language
+    }
+
+@app.post("/ai/test")
+def aiTest(data : AIChatRequest):
+    result = chatWithAI(
+        message = data.message,
+        user_language = data.language
+    )
+
+    if not result["success"]:
+        raise HTTPException(status_code = 500, detail = result["error"])
+
+    return result
+
+### OTHER ROUTES
 @app.get("/")
 def home(db : Session = Depends(get_db)):
     total = db.query(UserDB).count()

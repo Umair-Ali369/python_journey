@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+import os
 from datetime import datetime, timedelta, timezone
 import bcrypt
 from warnings import deprecated
@@ -8,6 +10,8 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from database import get_db
 from Models.db_models import UserDB
+
+load_dotenv()
 
 SECRET_KEY = "THEWorldIsMine369"
 ALGORITHM  = "HS256"

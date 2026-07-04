@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 .env
 data/global_system.json
+data/conversations.json
+venv/
