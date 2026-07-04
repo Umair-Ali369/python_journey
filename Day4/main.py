@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 import os
-
-from sqlalchemy.sql.functions import current_user
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 from auth_user import hashPassword, verifyPassword, create_token, getCurrentUser
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.security import OAuth2PasswordRequestForm
@@ -19,6 +19,14 @@ load_dotenv()
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title = "Global System APIs", version= "2.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins = ["*"],
+    allow_credentials = True,
+    allow_methods = ["*"],
+    allow_headers = ["*"]
+)
 
 ## PYNDATIC MODELS
 class UserCreate(BaseModel):
@@ -244,6 +252,33 @@ def get_user(user_id : int, db : Session = Depends(get_db)):
         if user_id == u.id:
             return u.to_dict()
     raise HTTPException(status = "404", Detail = "User NOt Found!")
+
+@app.delete("/users/{user_id}")
+def deleteUser(
+    user_id : int,
+    db : Session = Depends(get_db),
+    currentUser : UserDB = Depends(getCurrentUser)
+):
+    if currentUser.id != user_id:
+        raise HTTPException(status_code = 403, detail = "You can delete only your own account.")
+    user = db.query(UserDB).filter(UserDB.id == user_id).first()
+
+    if not user:
+        raise HTTPException(status_code = 404, detail = "User not found!.")
+
+    db.delete(user)
+    db.commit()
+    return {
+        "message" : f"User {user.name} deleted"
+    }
+## health check
+@app.get("/health")
+def healthCheck(db : Session = Depends(get_db)):
+    try:
+        db.execute(text("SELECT 1"))
+        return { "status" : "healthy" , "database" : "connected"}
+    except Exception as e:
+        return {"status" : "unhealthy", "error" : str(e)}
 
 ## CONVERSATION ROUTES
 

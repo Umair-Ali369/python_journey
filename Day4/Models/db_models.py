@@ -20,7 +20,23 @@ class UserDB(Base):
     messages = relationship(
         "MessagesDB",
         back_populates="sender",
-        primaryjoin="UserDB.id == MessagesDB.sender_id"
+        primaryjoin="UserDB.id == MessagesDB.sender_id",
+        cascade="all, delete-orphan"
+    )
+
+    conversations_as_user1 = relationship(
+        "ConversationDB",
+        foreign_keys="[ConversationDB.user1_id]",
+        back_populates="user1",
+        cascade="all, delete-orphan"
+    )
+
+    # Clear conversations where this user was Participant 2
+    conversations_as_user2 = relationship(
+        "ConversationDB",
+        foreign_keys="[ConversationDB.user2_id]",
+        back_populates="user2",
+        cascade="all, delete-orphan"
     )
 
 class ConversationDB(Base):
@@ -31,7 +47,7 @@ class ConversationDB(Base):
     user2_id   = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime, default=datetime.now)
 
-    messages = relationship("MessagesDB", back_populates="conversation")
+    messages = relationship("MessagesDB", back_populates="conversation",  cascade="all, delete-orphan")
     user1    = relationship("UserDB", foreign_keys=[user1_id])
     user2    = relationship("UserDB", foreign_keys=[user2_id])
 
